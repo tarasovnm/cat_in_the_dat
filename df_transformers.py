@@ -1,7 +1,8 @@
 import pandas as pd
+import numpy as np
 from sklearn.base import TransformerMixin, BaseEstimator, clone
 
-class SelectColumnsTransfomer(BaseEstimator, TransformerMixin):
+class SelectColumnsTransformer(BaseEstimator, TransformerMixin):
     """ A DataFrame transformer that provides column selection
     
     Allows to select columns by name from pandas dataframes in scikit-learn
@@ -218,4 +219,65 @@ class DropAllZeroTrainColumnsTransformer(BaseEstimator, TransformerMixin):
         """
         
         self.cols_ = X.columns[(X==0).all()]
+        return self
+
+
+class BinaryColumnsTransformer(BaseEstimator, TransformerMixin):
+    """ A DataFrame transformer that provides binary columns encoding
+    
+    Encodes binary columns by 0 and 1 from pandas dataframes in scikit-learn
+    pipelines.
+
+    Parameters
+    ----------
+    bin_dict : dictionary for mapping values in columns
+    fill_na : boolean, true if need to fill missing values
+        Default: True
+    na_value : value to fill missing values
+        Default: 0 
+    
+    """
+
+    def __init__(self, bin_dict, fill_na = True, na_value = 0):
+        self.bin_dict = bin_dict
+        self.fill_na = fill_na
+        self.na_value = na_value
+
+    def transform(self, X, **transform_params):
+        """ Encodes binary columns by 0 and 1
+        
+        Parameters
+        ----------
+        X : pandas DataFrame
+            
+        Returns
+        ----------
+        
+        trans : pandas DataFrame
+     
+        """
+        trans = X.copy()
+
+        for col in trans.columns:
+            if trans.dtypes[col] == np.object:
+                trans[col] = trans[col].map(self.bin_dict)
+
+        if self.fill_na:
+            trans = trans.fillna(self.na_value)
+
+        return trans
+    
+    def fit(self, X, y=None, **fit_params):
+        """ Do nothing function
+        
+        Parameters
+        ----------
+        X : pandas DataFrame
+        y : default None
+                
+        
+        Returns
+        ----------
+        self  
+        """
         return self
