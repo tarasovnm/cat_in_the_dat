@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.base import TransformerMixin, BaseEstimator, clone
+from sklearn.preprocessing import LabelEncoder
 
 class SelectColumnsTransformer(BaseEstimator, TransformerMixin):
     """ A DataFrame transformer that provides column selection
@@ -173,7 +174,7 @@ class ToDummiesTransformer(BaseEstimator, TransformerMixin):
         
         """
     
-        trans = pd.get_dummies(X).copy()
+        trans = pd.get_dummies(X, dummy_na=True).copy()
         return trans
 
     def fit(self, X, y=None, **fitparams):
@@ -264,6 +265,101 @@ class BinaryColumnsTransformer(BaseEstimator, TransformerMixin):
 
         if self.fill_na:
             trans = trans.fillna(self.na_value)
+
+        return trans
+    
+    def fit(self, X, y=None, **fit_params):
+        """ Do nothing function
+        
+        Parameters
+        ----------
+        X : pandas DataFrame
+        y : default None
+                
+        
+        Returns
+        ----------
+        self  
+        """
+        return self
+
+
+class LabelTransformer(BaseEstimator, TransformerMixin):
+    """ A Dataframe transformer that provide label encoding
+    """
+    
+    def transform(self, X, **transformparams):
+        """ Returns a label encoded version of a DataFrame
+        
+        Parameters
+        ----------
+        X : pandas DataFrame
+        
+        Returns
+        ----------
+        trans : pandas DataFrame
+        
+        """
+    
+        trans = X.copy()
+
+        for col in trans.columns:
+            le = LabelEncoder()
+            trans[col] = le.fit_transform(trans[col])
+
+        return trans
+
+    def fit(self, X, y=None, **fitparams):
+        """ Do nothing operation
+        
+        Returns
+        ----------
+        self : object
+        """
+        return self
+
+
+class OrderedColumnsTransformer(BaseEstimator, TransformerMixin):
+    """ A DataFrame transformer that provides ordered columns encoding
+    
+    Encodes ordered columns by indeces from list
+
+    Parameters
+    ----------
+    order_list : list for mapping values in columns to indeces
+        Default: []
+    
+    """
+
+    def __init__(self, order_list = []):
+        self.order_list = order_list
+
+    def transform(self, X, **transform_params):
+        """ Encodes ordered columns by indeces
+        
+        Parameters
+        ----------
+        X : pandas DataFrame
+            
+        Returns
+        ----------
+        
+        trans : pandas DataFrame
+     
+        """
+        trans = X.copy()
+
+        if len(self.order_list) > 0:
+            for i in range(1, len(self.order_list) + 1):
+                col = trans.columns[i-1]
+                ord_order_dict = {i : j + 1 for j, i in enumerate(self.order_list[i-1])}
+                trans[col] = trans[col].map(ord_order_dict)
+        else:
+            for i in range(1, trans.shape[1] + 1):
+                col = trans.columns[i-1]
+                values = list(set(list(trans[col].dropna().unique())))
+                ord_order_dict = {i : j + 1 for j, i in enumerate(sorted(values))}
+                trans[col] = trans[col].map(ord_order_dict)
 
         return trans
     
